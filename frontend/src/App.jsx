@@ -13,7 +13,9 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://parking-lot-management-25s2.onrender.com/api";
 const LOT_STORAGE_KEY = "parking-lot-last-created";
 
 async function apiRequest(path, options = {}) {

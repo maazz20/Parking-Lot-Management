@@ -53,10 +53,10 @@ spring.datasource.password=maaz1234
 mvn spring-boot:run
 ```
 
-The backend runs on:
+The deployed backend runs on:
 
 ```text
-http://localhost:8080
+https://parking-lot-management-25s2.onrender.com
 ```
 
 ## Frontend Setup
@@ -85,7 +85,7 @@ The frontend runs on:
 http://127.0.0.1:5173
 ```
 
-The Vite dev server proxies `/api` requests to the Spring Boot backend at `http://localhost:8080`.
+The Vite dev server proxies `/api` requests to the deployed Spring Boot backend at `https://parking-lot-management-25s2.onrender.com`.
 
 ## API Endpoints
 
