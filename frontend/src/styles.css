@@ -221,10 +221,30 @@ input:focus {
   font-weight: 800;
 }
 
+.form-hint {
+  margin: -2px 0 0;
+  color: #69778a;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
 .slot-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   gap: 10px;
+}
+
+.empty-state {
+  display: grid;
+  min-height: 120px;
+  place-items: center;
+  padding: 18px;
+  border: 1px dashed #bcc8d8;
+  border-radius: 8px;
+  color: #607086;
+  background: #f8fafc;
+  font-weight: 800;
+  text-align: center;
 }
 
 .slot-tile {

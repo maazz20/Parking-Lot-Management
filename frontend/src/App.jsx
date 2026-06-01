@@ -16,7 +16,6 @@ import { useEffect, useMemo, useState } from "react";
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL ||
   "https://parking-lot-management-25s2.onrender.com/api";
-const LOT_STORAGE_KEY = "parking-lot-last-created";
 
 async function apiRequest(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -50,10 +49,7 @@ function App() {
   const [registrationQuery, setRegistrationQuery] = useState("");
   const [colorQuery, setColorQuery] = useState("");
   const [status, setStatus] = useState([]);
-  const [lot, setLot] = useState(() => {
-    const saved = localStorage.getItem(LOT_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [summary, setSummary] = useState(null);
   const [registrationResult, setRegistrationResult] = useState(null);
   const [colorResult, setColorResult] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -64,8 +60,11 @@ function App() {
     [status]
   );
 
-  const totalSlots = lot?.totalSlots || Math.max(12, ...status.map((slot) => slot.slotNumber), 0);
-  const availableSlots = Math.max(totalSlots - status.length, 0);
+  const lotName = summary?.name || "Control Desk";
+  const totalSlots = Number(summary?.totalSlots || 0);
+  const occupiedCount = Number(summary?.occupiedSlots ?? status.length);
+  const availableSlots = Number(summary?.availableSlots ?? Math.max(totalSlots - status.length, 0));
+  const hasParkingLot = totalSlots > 0;
 
   const showNotice = (type, message) => {
     setNotice({ type, message });
@@ -94,8 +93,20 @@ function App() {
     }
   };
 
-  useEffect(() => {
+  const refreshSummary = async () => {
+    const data = await runAction("summary", () => apiRequest("/parking-lots/summary"));
+    if (data) {
+      setSummary(data);
+    }
+  };
+
+  const refreshDashboard = () => {
+    refreshSummary();
     refreshStatus();
+  };
+
+  useEffect(() => {
+    refreshDashboard();
   }, []);
 
   const createLot = async (event) => {
@@ -114,14 +125,7 @@ function App() {
     );
 
     if (created) {
-      const cleanLot = {
-        id: created.id,
-        name: created.name,
-        totalSlots: created.totalSlots
-      };
-      setLot(cleanLot);
-      localStorage.setItem(LOT_STORAGE_KEY, JSON.stringify(cleanLot));
-      refreshStatus();
+      refreshDashboard();
     }
   };
 
@@ -142,7 +146,7 @@ function App() {
 
     if (message) {
       setParkForm({ registrationNumber: "", color: "" });
-      refreshStatus();
+      refreshDashboard();
     }
   };
 
@@ -156,7 +160,7 @@ function App() {
 
     if (message) {
       setLeaveSlot("");
-      refreshStatus();
+      refreshDashboard();
     }
   };
 
@@ -193,16 +197,16 @@ function App() {
       <section className="top-bar">
         <div>
           <p className="eyebrow">Parking Lot System</p>
-          <h1>{lot?.name || "Control Desk"}</h1>
+          <h1>{lotName}</h1>
         </div>
-        <button className="icon-button" onClick={refreshStatus} disabled={loading.status} title="Refresh status">
+        <button className="icon-button" onClick={refreshDashboard} disabled={loading.status || loading.summary} title="Refresh status">
           {loading.status ? <Loader2 className="spin" size={19} /> : <RefreshCw size={19} />}
         </button>
       </section>
 
       <section className="metrics-grid" aria-label="Parking summary">
         <Metric icon={Warehouse} label="Total Slots" value={totalSlots} />
-        <Metric icon={ParkingCircle} label="Occupied" value={status.length} />
+        <Metric icon={ParkingCircle} label="Occupied" value={occupiedCount} />
         <Metric icon={MapPin} label="Available" value={availableSlots} />
       </section>
 
@@ -255,7 +259,10 @@ function App() {
                   required
                 />
               </label>
-              <SubmitButton loading={loading.park} icon={Ticket}>Park Vehicle</SubmitButton>
+              <SubmitButton loading={loading.park} icon={Ticket} disabled={!hasParkingLot}>
+                Park Vehicle
+              </SubmitButton>
+              {!hasParkingLot && <p className="form-hint">Create a parking lot before adding vehicles.</p>}
             </form>
           </Panel>
 
@@ -279,19 +286,23 @@ function App() {
 
         <section className="status-column">
           <Panel title="Live Slot Map" icon={ParkingCircle}>
-            <div className="slot-grid">
-              {Array.from({ length: totalSlots }, (_, index) => {
-                const slotNumber = index + 1;
-                const vehicle = occupiedSlots.get(slotNumber);
-                return (
-                  <div className={`slot-tile ${vehicle ? "occupied" : "empty"}`} key={slotNumber}>
-                    <span>Slot {slotNumber}</span>
-                    <strong>{vehicle?.registrationNumber || "Available"}</strong>
-                    {vehicle && <small>{vehicle.color}</small>}
-                  </div>
-                );
-              })}
-            </div>
+            {hasParkingLot ? (
+              <div className="slot-grid">
+                {Array.from({ length: totalSlots }, (_, index) => {
+                  const slotNumber = index + 1;
+                  const vehicle = occupiedSlots.get(slotNumber);
+                  return (
+                    <div className={`slot-tile ${vehicle ? "occupied" : "empty"}`} key={slotNumber}>
+                      <span>Slot {slotNumber}</span>
+                      <strong>{vehicle?.registrationNumber || "Available"}</strong>
+                      {vehicle && <small>{vehicle.color}</small>}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-state">No parking lot exists in this database yet.</div>
+            )}
           </Panel>
 
           <Panel title="Search" icon={Search}>
@@ -389,9 +400,9 @@ function Panel({ title, icon: Icon, children }) {
   );
 }
 
-function SubmitButton({ loading, icon: Icon, children }) {
+function SubmitButton({ loading, icon: Icon, disabled = false, children }) {
   return (
-    <button type="submit" className="primary-button" disabled={loading}>
+    <button type="submit" className="primary-button" disabled={loading || disabled}>
       {loading ? <Loader2 className="spin" size={18} /> : <Icon size={18} />}
       <span>{children}</span>
     </button>

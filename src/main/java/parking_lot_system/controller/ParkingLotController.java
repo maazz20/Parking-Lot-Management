@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import parking_lot_system.dto.CreateParkingLotRequest;
+import parking_lot_system.dto.ParkingLotSummaryResponse;
 import parking_lot_system.dto.ParkVehicleRequest;
 import parking_lot_system.dto.ParkingStatusResponse;
 import parking_lot_system.dto.SlotResponse;
@@ -30,6 +31,14 @@ public class ParkingLotController {
                 parkingLotService.createParkingLot(request);
 
         return ResponseEntity.ok(parkingLot);
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<ParkingLotSummaryResponse> getSummary() {
+
+        return ResponseEntity.ok(
+                parkingLotService.getParkingLotSummary()
+        );
     }
 
     @PostMapping("/park")

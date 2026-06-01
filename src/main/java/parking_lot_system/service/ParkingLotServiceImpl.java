@@ -3,6 +3,7 @@ package parking_lot_system.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import parking_lot_system.dto.CreateParkingLotRequest;
+import parking_lot_system.dto.ParkingLotSummaryResponse;
 import parking_lot_system.dto.ParkVehicleRequest;
 import parking_lot_system.dto.ParkingStatusResponse;
 import parking_lot_system.dto.SlotResponse;
@@ -54,7 +55,31 @@ public class ParkingLotServiceImpl implements ParkingLotService {
     }
 
     @Override
+    public ParkingLotSummaryResponse getParkingLotSummary() {
+
+        ParkingLot latestLot = parkingLotRepository
+                .findTopByOrderByIdDesc()
+                .orElse(null);
+
+        long totalSlots = parkingSlotRepository.count();
+        long occupiedSlots = parkingSlotRepository.countByOccupied(true);
+
+        return ParkingLotSummaryResponse.builder()
+                .id(latestLot != null ? latestLot.getId() : null)
+                .name(latestLot != null ? latestLot.getName() : null)
+                .totalSlots(totalSlots)
+                .occupiedSlots(occupiedSlots)
+                .availableSlots(totalSlots - occupiedSlots)
+                .build();
+    }
+
+    @Override
     public String parkVehicle(ParkVehicleRequest request) {
+
+        if (parkingSlotRepository.count() == 0) {
+            throw new ParkingLotFullException(
+                    "Create a parking lot before parking vehicles");
+        }
 
         ParkingSlot slot = parkingSlotRepository
                 .findFirstByOccupiedFalseOrderBySlotNumberAsc()

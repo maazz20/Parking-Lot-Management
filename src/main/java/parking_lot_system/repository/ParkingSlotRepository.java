@@ -12,6 +12,8 @@ public interface ParkingSlotRepository extends JpaRepository<ParkingSlot, Long> 
 
     List<ParkingSlot> findByOccupied(boolean occupied);
 
+    long countByOccupied(boolean occupied);
+
     ParkingSlot findBySlotNumber(Integer slotNumber);
 
     Optional<ParkingSlot> findFirstByOccupiedFalseOrderBySlotNumberAsc();
