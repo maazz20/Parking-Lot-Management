@@ -43,8 +43,8 @@ CREATE DATABASE parking_lot_db;
 
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/parking_lot_db
-spring.datasource.username=root
-spring.datasource.password=maaz1234
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
 ```
 
 3. Run the Spring Boot application:
